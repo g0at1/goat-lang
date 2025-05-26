@@ -1,0 +1,11 @@
+print("Zaraz sprawdzę dwa warunki:");
+
+if (true) {
+    print("Ten blok wykona się, bo warunek jest true");
+}
+
+if (false) {
+    print("Nigdy tego nie zobaczysz, bo warunek to false");
+}
+
+print("Koniec programu.");
