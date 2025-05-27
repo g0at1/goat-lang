@@ -1,11 +1,11 @@
-print("Zaraz sprawdzę dwa warunki:");
+print("We will be checking conditions:");
 
-if (true) {
-    print("Ten blok wykona się, bo warunek jest true");
+if (true == true) {
+    print("This will show because true is equal to true");
 }
 
-if (false) {
-    print("Nigdy tego nie zobaczysz, bo warunek to false");
+if (true == false) {
+    print("It will not show because true is not equal to false");
 }
 
-print("Koniec programu.");
+print("End of the program.");

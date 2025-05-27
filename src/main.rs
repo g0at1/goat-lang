@@ -15,6 +15,7 @@ enum Token {
     LBrace,
     RBrace,
     Semicolon,
+    Equal,
     StringLiteral(String),
     EOF,
 }
@@ -83,6 +84,15 @@ impl Lexer {
                 }
                 Token::StringLiteral(s)
             }
+            '=' => {
+                self.bump();
+                if self.peek() == '=' {
+                    self.bump();
+                    Token::Equal
+                } else {
+                    panic!("Unexpected single `=`; use `==` for equality");
+                }
+            }
             _ if c.is_alphabetic() => {
                 let mut id = String::new();
                 while self.peek().is_alphanumeric() {
@@ -107,6 +117,7 @@ impl Lexer {
 #[derive(Debug)]
 enum Expr {
     Bool(bool),
+    Equal(Box<Expr>, Box<Expr>),
 }
 
 #[derive(Debug)]
@@ -143,16 +154,24 @@ impl Parser {
     }
 
     fn parse_expr(&mut self) -> Expr {
+        self.parse_equality()
+    }
+
+    fn parse_equality(&mut self) -> Expr {
+        let mut left = self.parse_primary();
+        while let Token::Equal = self.cur {
+            self.bump();
+            let right = self.parse_primary();
+            left = Expr::Equal(Box::new(left), Box::new(right));
+        }
+        left
+    }
+
+    fn parse_primary(&mut self) -> Expr {
         match &self.cur {
-            Token::True => {
-                self.bump();
-                Expr::Bool(true)
-            }
-            Token::False => {
-                self.bump();
-                Expr::Bool(false)
-            }
-            _ => panic!("Expected boolean, got {:?}", self.cur),
+            Token::True  => { self.bump(); Expr::Bool(true) }
+            Token::False => { self.bump(); Expr::Bool(false) }
+            _ => panic!("Expected boolean literal, found {:?}", self.cur),
         }
     }
 
@@ -187,8 +206,8 @@ impl Parser {
     fn parse_stmt(&mut self) -> Stmt {
         match &self.cur {
             Token::Print => self.parse_print(),
-            Token::If => self.parse_if(),
-            _ => panic!("Unexpected token at start of statement: {:?}", self.cur),
+            Token::If    => self.parse_if(),
+            _ => panic!("Unexpected token at start of stmt: {:?}", self.cur),
         }
     }
 
@@ -237,19 +256,28 @@ fn syscall_write(buf: &[u8]) {
     }
 }
 
+fn eval_expr(e: &Expr) -> bool {
+    match e {
+        Expr::Bool(b) => *b,
+        Expr::Equal(l, r) => {
+            let lv = eval_expr(l);
+            let rv = eval_expr(r);
+            lv == rv
+        }
+    }
+}
+
 fn eval(stmts: &[Stmt]) {
     for s in stmts {
         match s {
             Stmt::Print(text) => {
                 let mut buf = text.as_bytes().to_vec();
                 buf.push(b'\n');
-                syscall_write(&buf)
+                syscall_write(&buf);
             }
             Stmt::If { cond, body } => {
-                if let Expr::Bool(b) = cond {
-                    if *b {
-                        eval(body);
-                    }
+                if eval_expr(cond) {
+                    eval(body);
                 }
             }
         }
