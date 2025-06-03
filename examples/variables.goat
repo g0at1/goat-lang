@@ -1,0 +1,11 @@
+a = 1;
+b = 10;
+c = "test";
+d = true;
+e = false;
+
+print(a);
+print(b);
+print(c);
+print(d);
+print(e);
